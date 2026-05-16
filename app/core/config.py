@@ -64,3 +64,5 @@ class Settings(BaseSettings):
         return self.CORS_ORIGINS
 
 settings = Settings()
+
+hi
