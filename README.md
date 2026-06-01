@@ -7,7 +7,7 @@ This is the backend API for **GlowUp**, an AI Dermatology Platform that provides
   - **Face Detection:** Primary detection powered by **MediaPipe**, with **OpenCV Haar** cascades acting as a robust fallback detector.
   - **SkinSegmentationModel:** Uses BiSeNet / U-Net / DeepLabV3+ for precise facial mapping.
   - **SkinToneEstimator:** Combines LAB + HSV with a calibrated ML classifier.
-  - **OilinessDrynessAnalyzer:** Uses computer vision heuristics and a lightweight classifier.
+  - **OilinessDrynessAnalyzer:** Uses OpenCV specular highlight detection to calculate facial glare percentage and strictly classify skin as **Oily**, **Combination**, or **Normal**.
   - **SensitivityRednessAnalyzer:** Redness and irritation visual indicator model.
   - **Acne Detection & Heatmap:** Employs **YOLOv8** and **YOLOv9** object detection to generate accurate acne severity reports and visual heatmaps.
   - **QuestionnaireFusionModel:** Fuses visual data with questionnaire inputs using XGBoost / RandomForest / LightGBM.

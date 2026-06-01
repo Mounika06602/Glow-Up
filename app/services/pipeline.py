@@ -3,6 +3,8 @@ import time
 import os
 import random
 from PIL import Image, ImageDraw
+import cv2
+import numpy as np
 from app.schemas.analysis import SkinAnalysisResult, AcneReport, Prediction, BoundingBox
 from app.services.storage import save_image_locally
 
@@ -23,10 +25,43 @@ class SkinToneEstimator:
         return Prediction(value=random.choice(tones), confidence=round(random.uniform(0.75, 0.99), 2))
 
 class OilinessDrynessAnalyzer:
-    def analyze(self, image):
-        types = ["Oily", "Dry", "Combination", "Normal"]
-        logger.info("Running OilinessDrynessAnalyzer...")
-        return Prediction(value=random.choice(types), confidence=round(random.uniform(0.70, 0.95), 2))
+    def analyze(self, image_path):
+        logger.info(f"Running OpenCV Specular Highlight Detection on {image_path}...")
+        try:
+            # Load image using OpenCV
+            img = cv2.imread(image_path)
+            if img is None:
+                raise ValueError("Could not read image for CV analysis")
+            
+            # Convert to grayscale
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Threshold to find bright spots (specular highlights / glare)
+            _, thresh = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
+            
+            # Calculate percentage of shiny pixels
+            total_pixels = gray.shape[0] * gray.shape[1]
+            shiny_pixels = cv2.countNonZero(thresh)
+            shine_percentage = (shiny_pixels / total_pixels) * 100
+            
+            logger.info(f"Calculated shine percentage: {shine_percentage:.2f}%")
+            
+            # ML Classifier Heuristics
+            if shine_percentage > 2.5:
+                skin_type = "Oily"
+                confidence = min(0.70 + (shine_percentage / 10), 0.99)
+            elif shine_percentage > 0.5:
+                skin_type = "Combination"
+                confidence = min(0.70 + (shine_percentage / 5), 0.95)
+            else:
+                skin_type = "Normal"
+                confidence = max(0.99 - shine_percentage, 0.70)
+                
+            return Prediction(value=skin_type, confidence=round(confidence, 2))
+            
+        except Exception as e:
+            logger.error(f"CV analysis failed: {e}. Falling back to normal.")
+            return Prediction(value="Normal", confidence=0.50)
 
 class SensitivityRednessAnalyzer:
     def analyze(self, image):
